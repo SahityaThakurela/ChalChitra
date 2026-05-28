@@ -52,7 +52,7 @@ const userSchema = new Schema(
 
 
 userSchema.pre("save", async function (next) {      //pre is hook like (post,listen),   //save is middleware
-    if (!this.isModified("password")) return; //only when the pas.. changes when only next() fnc runs
+    if (!this.isModified("password")) return;       //only when the pas.. changes when only next() fnc runs
 
     this.password = await bcrypt.hash(this.password, 10)
 })
