@@ -50,16 +50,18 @@ const userSchema = new Schema(
 
 )
 
-
-userSchema.pre("save", async function (next) {      //pre is hook like (post,listen),   //save is middleware
-    if (!this.isModified("password")) return;       //only when the pas.. changes when only next() fnc runs
+//pre is hook like (post,listen) & save is a middleware
+userSchema.pre("save", async function (next) {      
+    //only when the pas.. changes when only next() fnc runs
+    if (!this.isModified("password")) return;       
 
     this.password = await bcrypt.hash(this.password, 10)
 })
 
-
-userSchema.methods.isPasswordCorrect = async function (password) {      // creating a method for checking
-    return await bcrypt.compare(password, this.password)        //inbuilt func to compare
+// creating a method for checking
+userSchema.methods.isPasswordCorrect = async function (password) {
+    //inbuilt func to compare      
+    return await bcrypt.compare(password, this.password)        
 }
 
 userSchema.methods.generateAccessToken = function (){
