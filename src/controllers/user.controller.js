@@ -13,7 +13,9 @@ const generateAccessAndRefreshTokens = async(userid) => {
         user.refreshToken = refreshToken
         await user.save({   validateBeforeSave: false })
 
-        return { accessToken, refreshToken }
+        // by giving false validation is not running in the db before saving because there is no need to verify the password again and again while saving the refresh token into db, we've already did it before this process 
+
+        return { accessToken, refreshToken }    //returning the object 
 
     } catch (error) {
         throw new ApiError(500, "Something went wrong while generating access and refreshing token")
@@ -48,8 +50,13 @@ const registerUser = asyncHandler (async (req, res) => {
     
 
     // check if user already exists: username, email
-    const existedUser = await User.findOne({     // find one stop when it finds the //User can talk to DB directly
-        $or: [{ username }, { email }]     //or is a operator 
+    const existedUser = await User.findOne({     // findone stop when it finds first match
+
+    // "User" call mongoose functions like findone,create,etc 
+    // "user" || "any_instance_name_you_passed" can can methods you've created like in bcrypt/auth..
+
+        $or: [{ username }, { email }]     
+        //or is a mongodb operator we passes a array []
     })
     if(existedUser){
         throw new ApiError(409, "User with same email and username already exist")
@@ -82,7 +89,7 @@ const registerUser = asyncHandler (async (req, res) => {
 
     // create user object - create entry in db
     const user = await User.create({
-        fullName,                       // in js fullName, -> fullName = fullName
+        fullName,                       // in js fullName, -> fullName : fullName
         email,
         username: username.toLowerCase(),
         password,
@@ -94,9 +101,11 @@ const registerUser = asyncHandler (async (req, res) => {
     // remove password and refresh token field from response
     // check for user creation
     const createdUser = await User.findById(user._id).select(   // this select feature work little diff 
-        //this ._id is created automatically everytimes entry happens
-        "-password -refreshToken"                               // -fields not selected 
+        "-password -refreshToken"                               
     )
+    // "-password -refreshToken" these selected fields will not send to the client/user side 
+    // this ._id is created automatically everytimes entry happens
+
     if(!createdUser) {
         throw new ApiError(500, "Something is wrong while registering the user")
     }
@@ -133,6 +142,9 @@ const loginUser = asyncHandler (async (req, res) => {
     if(!user){
         throw new ApiError(404, "user not found")
     }
+
+
+
     //password check
     const isPasswordValid = await user.isPasswordCorrect(password)
     if (!isPasswordValid){
@@ -144,9 +156,10 @@ const loginUser = asyncHandler (async (req, res) => {
     const logedInUser = await User.findById(user._id).
     select("-password -refreshToken")
 
+    // By using options, cookies are only be modified by the server side, user can only view
     const options = {
-        httpOnly: true,     // only modified by the server
-        secure: true        // ,,
+        httpOnly: true,     
+        secure: true        
     }
 
 
@@ -170,11 +183,13 @@ const logoutUser = asyncHandler(async(req, res) => {
         req.user._id,
         {
             $set: {
-                refreshToken: undefined
+                refreshToken: undefined     
+                // Prevent token reuse - If someone steals the token, they can't use it to get a new access token
+
             }
         },
         {
-            new: true
+            new: true       // Returns the updated user document
         }
     )
 
@@ -185,7 +200,7 @@ const logoutUser = asyncHandler(async(req, res) => {
 
     return res
     .status(200)
-    .clearCookie("accessToken", options)
+    .clearCookie("accessToken", options)       //clearCookie is a method inside cookieparser to clear the cookies
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "user logged out"))
 

@@ -23,8 +23,10 @@ export const verifyJWT = asyncHandler(async(req, res, next) => {
             throw new ApiError (401, "Invaled access token")
         }
 
-        req.user = user
+        // After the JWT is verified and the user is found, you need to pass this user information to the next route handler
+        // Instead of querying the database again, you store it in req.user.
 
+        req.user = user
         next()
     } catch (error) {
         throw new ApiError(401, error?.message || "Invalid access token");
