@@ -65,8 +65,10 @@ const registerUser = asyncHandler (async (req, res) => {
 
 
     // check for images, check for avatar
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    let avatarLocalPath;
+    if (req.files && Array.isArray(req.files.avatar) && req.files.avatar.length > 0) {
+        avatarLocalPath = req.files.avatar[0].path;
+    }
 
     //better way to check coverImageLocalPath so that when there is nothing empty string output and no error should come 
     let coverImageLocalPath;
@@ -226,13 +228,11 @@ const refreshAccessToken = asyncHandler(async(req, res) => {
         if (incomingRefreshToken !== user?.refreshToken){
             throw ApiError(401, "Token is Expired or used")
         }
-    
-        const options = {
-            httpOnly: true,
-            secure: true
-        }
 
-        const {newrefreshToken, accessToken} = await generateAccessAndRefreshTokens(user._id)
+
+        const {accessToken, newrefreshToken} = await generateAccessAndRefreshTokens(user._id)
+
+        
     
         return res
         .status(200)
@@ -291,7 +291,7 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
         throw new ApiError(400, "all fields are required")
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
@@ -320,7 +320,7 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
         throw ApiError(400, "Error while uploading on cloud")
     }
 
-    User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
@@ -329,6 +329,10 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
         },
         { new: true }
     ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar updated successfully"))
 
 }) 
 
@@ -345,7 +349,7 @@ const updateUserCover = asyncHandler(async(req, res) => {
         throw ApiError(400, "Error while uploading on cloud")
     }
 
-    User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
@@ -355,7 +359,88 @@ const updateUserCover = asyncHandler(async(req, res) => {
         { new: true }
     ).select("-password")
 
+    return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Cover image updated successfully"))
+
 }) 
+
+const getUserChannelProfile = asyncHandler(async(req, res) => {
+    const {username} = req.params
+
+    if(!username){
+        throw ApiError(401, "username not found in params")
+    }
+
+    // User.aggregate([{},{},{}])
+
+    const channel = await User.aggregate([
+            // this pipeline find the perticular user for further operations
+            {
+                $match: {
+                    username: username?.toLowerCase()
+                }
+            },
+            // lookup is a MongoDB aggregation operator that joins data from two collections & output is an array
+            {
+                $lookup: {
+                    from: "subscriptions",          // here make subscriptions from Subscription 
+                    localField: "_id",
+                    foreignField: "channel",        // Why channel ??? -->MUST KNOW<-- REF: 19th Video
+                    as: "subscribers"               // output main array deta hai
+              }
+            },
+            {
+                $lookup: {
+                    from: "subscriptions",
+                    localField: "_id",
+                    foreignField: "subscriber",     // Why channel ??? -->MUST KNOW<-- REF: 19th Video
+                    as: "subcribedTo"
+                }
+            },
+            {
+                $addFields: {
+                    subscribersCount: {
+                        $size: "$subscribers"
+                    },
+                    channelsCount: {
+                        $size: "$subcribedTo"
+                    },
+                    isSubscribed: {
+                        $cond: {
+                            if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                            then: true,
+                            else: false
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    fullName: 1,
+                    subscribersCount: 1,
+                    channelsCount: 1,
+                    isSubscribed: 1,
+                    username: 1,
+                    avatar: 1,
+                    coverImage: 1,
+                    email: 1,
+
+
+                }
+            }
+    ])
+
+    console.log(channel)
+
+    if(!channel?.length) {
+        throw new ApiError(200, "Channel not exist")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, channel[0], "User Channel fetch successfully"))
+})
 
 export {
     registerUser,
@@ -366,7 +451,6 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCover
-
-
+    updateUserCover,
+    getUserChannelProfile
 }
