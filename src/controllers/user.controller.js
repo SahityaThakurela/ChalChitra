@@ -256,18 +256,18 @@ const changePassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword, confirmPassword } = req.body
 
     if (newPassword !== confirmPassword) {
-        throw ApiError(401, "password didn't matched")
+        throw new ApiError(401, "password didn't matched")
     }
 
     if (!(oldPassword && newPassword && confirmPassword)) {
-        throw ApiError(402, "Please Enter the values")
+        throw new ApiError(402, "Please Enter the values")
     }
 
     const user = await User.findOne(req.user?._id)
     const isPasswordCorrect = await isPasswordCorrect(oldPassword)
 
     if (!isPasswordCorrect) {
-        throw ApiError(400, "Incorrect password")
+        throw new ApiError(400, "Incorrect password")
     }
 
     user.password = newPassword
@@ -462,19 +462,21 @@ const getUserHistory = asyncHandler(async (req, res) => {
                 as: "watchHistory",
                 pipeline: [
                     {
-                        from: "users",
-                        localField: "owner",
-                        foreignField: "_id",
-                        as: "owner",
-                        pipeline: [
-                            {
-                                $project: {
-                                    fullName: 1,
-                                    username: 1,
-                                    avatar: 1
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     },
                     {
                         // response m array ki jagah object send krenge by this so that ki loop na run kren
@@ -490,14 +492,14 @@ const getUserHistory = asyncHandler(async (req, res) => {
     ])
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(
-            200,
-            user[0].watchHistory,   // user object send kr raha h
-            "watch History fetched Successfully"
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                user[0].watchHistory,   // user object send kr raha h
+                "watch History fetched Successfully"
+            )
         )
-    )
 })
 
 export {
