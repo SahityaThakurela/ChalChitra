@@ -24,6 +24,8 @@ const userSchema = new Schema(
             required: true,
             trim: true,
             index: true
+            // index: true on fullName tells Mongoose/MongoDB to create a database index for that field
+            //Creates a single-field index on fullName so queries that filter or sort by fullName run much faster
         },
         avatar: {
             type: String,       //cloudinaryy url
