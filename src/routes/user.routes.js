@@ -16,8 +16,9 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 
 const router = Router()
-
+// iska mtlb yh h ki /register pr registerUser controller chalne se phle upload.fields middleware chalega
 router.route("/register").post(
+    // multer ki masti chal rahi h
     upload.fields([
         {
             name: "avatar",

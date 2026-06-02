@@ -1,3 +1,6 @@
+// https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj
+// all models connection link are there
+
 import mongoose,{Schema} from "mongoose";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken";
@@ -24,7 +27,7 @@ const userSchema = new Schema(
             required: true,
             trim: true,
             index: true
-            // index: true on fullName tells Mongoose/MongoDB to create a database index for that field
+        // index: true on fullName tells Mongoose/MongoDB to create a database index for that field
             //Creates a single-field index on fullName so queries that filter or sort by fullName run much faster
         },
         avatar: {

@@ -32,7 +32,8 @@ router
     );
 
 router
-    .route("/:videoId")
+    .route("/:videoId")   
+    //The :videoId syntax creates a dynamic URL parameter. If the URL is /api/videos/123, Express extracts 123 and makes it available in your controllers as req.params.videoId.
     .get(getVideoById)
     .delete(deleteVideo)
     .patch(upload.single("thumbnail"), updateVideo);

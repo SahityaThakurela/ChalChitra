@@ -1,8 +1,8 @@
-import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiError } from "../utils/ApiError.js"
 import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
+import { asyncHandler } from "../utils/asyncHandler.js"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
 
@@ -66,6 +66,10 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
     // check for images, check for avatar
+    // *******
+    // Multer attaches the file's information to the "req.file" object so your controllers can access it later.
+    // *******
+
     let avatarLocalPath;
     if (req.files && Array.isArray(req.files.avatar) && req.files.avatar.length > 0) {
         avatarLocalPath = req.files.avatar[0].path;
