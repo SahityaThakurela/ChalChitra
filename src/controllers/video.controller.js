@@ -9,7 +9,7 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 
 const getAllVideos = asyncHandler(async (req, res) => {
     // const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    const { page, query, sortBy, sortType, userId } = req.query
+    let { page, limit, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
     if (!(userId)){
         throw new ApiError(400, "Fields are required")
@@ -26,11 +26,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 
     page = Number(req.query.page) || 1
-    limit = 10
+    limit = Number(req.query.limit) || 10
     const skip = (page - 1)*limit
 
     // Filter videos by userId (owner) ==>make it clear<==
-    const videoData = await Video.find({ owner: userId }).skip(skip).limit(limit).select("-isPublished")
+    const videoData = await Video.find().skip(skip).limit(limit).select("-isPublished")
 
 
     //const videoData = await apidata.select(select.split(",").join(" ")).skip(skip).limit(limit)
