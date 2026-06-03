@@ -101,7 +101,7 @@ const registerUser = asyncHandler(async (req, res) => {
         email,
         username: username.toLowerCase(),
         password,
-        avatar: avatar.url,
+        avatar: avatar?.url,
         coverImage: coverImage?.url || ""
     })
 
@@ -190,6 +190,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
+            // also used $unset:{} operator 
             $set: {
                 refreshToken: undefined
                 // Prevent token reuse - If someone steals the token, they can't use it to get a new access token
