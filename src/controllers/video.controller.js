@@ -85,6 +85,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
         title,
         description,
         duration,
+        owner: req.user._id
     })
     await video.save()
 
@@ -133,9 +134,9 @@ const updateVideo = asyncHandler(async (req, res) => {
 
     const { videoId } = req.params
     //TODO: update video details like title, description, thumbnail
-    const { title, description, thumbnail } = req.body
+    const { title, description } = req.body
 
-    if(!(title || description || thumbnail)){
+    if(!(title || description)){
         throw new ApiError(400, "One of the field is required to be modified")
     } 
 
@@ -149,8 +150,12 @@ const updateVideo = asyncHandler(async (req, res) => {
 
     const video = await Video.findById(videoId)
 
+    if(!video) {
+        throw new ApiError(404, "video not found in database")
+    }
+
     // authenticated that only the owner can change the details
-    if(req.user._id.toString() !== video.owner._id.toString()){
+    if(req.user._id.toString() !== video.owner.toString()){
         throw new ApiError (401, "You are not the the owner of the video")
     }
 
@@ -162,22 +167,34 @@ const updateVideo = asyncHandler(async (req, res) => {
         updatedFields.description = description
     } 
     
-    let newThumbnailPath
-    if(thumbnail){
-        let thumbnailPath
-        if(req.files && Array.isArray(req.files.thumbnail) && req.files.thumbnail.length > 0){
-            thumbnailPath = req.files.thumbnail[0].path
-        }
-        if(!thumbnailPath){
-            throw new ApiError(404, " Path not found for thumbnail")
-        }
+    // let newThumbnailPath
+    // if(thumbnail){
+    //     let thumbnailPath
+    //     if(req.files && req.files.path){
+    //         thumbnailPath = req.files.thumbnail[0].path
+    //     }
+    //     if(!thumbnailPath){
+    //         throw new ApiError(404, " Path not found for thumbnail")
+    //     }
 
-        newThumbnailPath = await uploadOnCloudinary(thumbnailPath)
+    //     newThumbnailPath = await uploadOnCloudinary(thumbnailPath)
 
-        if(!newThumbnailPath.url){
-            throw new ApiError(404, "Url of thumbnail while updating is not found")
+    //     if(!newThumbnailPath.url){
+    //         throw new ApiError(404, "Url of thumbnail while updating is not found")
+    //     }
+    //     updatedFields.thumbnail = newThumbnailPath.url
+    // }
+
+    if(req.file && req.file.path){
+        const thumbnailLocalPath = req.file.path
+        
+        const uploadedThumbnail = await uploadOnCloudinary(thumbnailLocalPath)
+
+        if(!uploadedThumbnail || !uploadedThumbnail.url){
+            throw new ApiError(500, "Failed to upload new thumbnail to Cloudinary")
         }
-        updatedFields.thumbnail = newThumbnailPath.url
+        
+        updatedFields.thumbnail = uploadedThumbnail.url
     }
     
 
@@ -209,9 +226,15 @@ const deleteVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "video not found")
     }
 
+
     const video = await Video.findById(videoId)
     if (!video){
         throw new ApiError(400, "Video is not provided it's NULL")
+    }
+    //check the owner before the deleting
+
+    if(req.user?._id.toString() !== video.owner.toString()){
+        throw new ApiError(400, "You are not Autharized to delete the file")
     }
     await video.deleteOne()
 
@@ -249,7 +272,11 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     .json(
         new ApiResponse(
             200,
-            video.isPublished,
+            {
+                isPublished: video.isPublished,
+                videoId: video._id
+
+            },
             "Video ispublished or not found successfully"
         )
     )
