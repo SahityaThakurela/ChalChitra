@@ -518,5 +518,5 @@ export {
     updateUserAvatar,
     updateUserCover,
     getUserChannelProfile,
-    getUserHistory
+     
 }

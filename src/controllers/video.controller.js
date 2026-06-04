@@ -32,9 +32,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     // Filter videos by userId (owner) ==>make it clear<==
     const videoData = await Video.find().skip(skip).limit(limit).select("-isPublished")
 
-
-    //const videoData = await apidata.select(select.split(",").join(" ")).skip(skip).limit(limit)
-
     return res
     .status(200)
     .json(
