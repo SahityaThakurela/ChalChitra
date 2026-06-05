@@ -17,7 +17,6 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     }
 
     //cheaking if user already liked or not
-
     const like = await Like.findOne({
         video: videoId,
         likeBy: req.user?._id
@@ -57,6 +56,49 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 const toggleCommentLike = asyncHandler(async (req, res) => {
     const { commentId } = req.params
     //TODO: toggle like on comment
+
+    if (!commentId) {
+        throw new ApiError(400, "please enter a video id")
+    }
+
+    if (!isValidObjectId(commentId)) {
+        throw new ApiError(400, "please enter a valid video id")
+    }
+
+    //cheaking if user already liked or not
+    const comment = await Comment.findOne({
+        comment: commentId,
+        likeBy: req.user?._id
+    })
+
+    if (comment) {
+        await Comment.deleteOne({ _id: Like._id })     // delete specific comment
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {isCommentLiked: false},
+                "comment unliked successfully"
+            )
+        )
+    } else {
+        await Comment.create({
+            comment: commentId,
+            likeBy: req.user?._id
+        })
+
+        return res
+        .status(201)
+        .json(
+            new ApiResponse(
+                201,
+                {isCommentLiked: true},
+                "comment liked successfully"
+            )
+        )
+    }
 
 })
 
