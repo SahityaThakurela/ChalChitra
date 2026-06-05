@@ -1,10 +1,8 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import {Tweet} from "../models/tweet.model.js"
-import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import { useId } from "react"
 
 const createTweet = asyncHandler(async (req, res) => {
     //TODO: create tweet
@@ -19,21 +17,18 @@ const createTweet = asyncHandler(async (req, res) => {
         owner: req.user?._id
     })
 
-    if(!tweets){
-        throw new ApiError(404, "tweet not found")
-    }
-
     return res
     .status(200)
     .json(
         new ApiResponse(
-            200, 
+            201, 
             tweets,
             "tweet has posted successfully"
         )
     )
 })
 
+// koi bhi kisi ki id se uske saare tweets dekh skta h lekin idher which is okay as of know 
 const getUserTweets = asyncHandler(async (req, res) => {
     // TODO: get user tweets
     const { userId } = req.params
@@ -48,7 +43,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
     const Tweets = await Tweet.find({ owner: userId })
 
-    if(!Tweets){
+    // .find() always return an array [] so !tweet never null instead of that check the length
+    if(Tweets.length === 0){
         throw new ApiError(404, "Tweets not found")
     }
 
@@ -58,7 +54,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
         new ApiResponse(
             200,
             {
-                owner : req.user._id,
+                owner : userId,
                 allTweets: Tweets
             },
             "all tweets by the user sereved successfully"
@@ -76,7 +72,8 @@ const updateTweet = asyncHandler(async (req, res) => {
         throw new ApiError(400,"Enter a tweet id")
     }
     
-    if(!content){
+    // for req.body check for !content.trim() === "" not !content because it never be null 
+    if(content.trim() === ""){
         throw new ApiError(400, "Please make some changes in existing comment")
     }
 
@@ -95,7 +92,7 @@ const updateTweet = asyncHandler(async (req, res) => {
         throw new ApiError(403, "you are not autharized to edit this tweet")
     }
 
-    tweet.content = content
+    tweet.content = content.trim()
     await tweet.save()
 
     return res
@@ -103,7 +100,8 @@ const updateTweet = asyncHandler(async (req, res) => {
     .json(
         new ApiResponse (
             200,
-            content,
+            // content, return full tweet
+            tweet,
             "Tweet is edited successfully"
         )
     )
@@ -130,7 +128,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
 
     // validating the user is autharized to delete the tweet or not 
     if(tweet.owner.toString() !== req.user?._id.toString()){
-        throw new ApiError(403, "you are not autharized to edit this tweet")
+        throw new ApiError(403, "you are not autharized to delete this tweet")
     }
 
     //await Tweet.findByIdAndDelete(tweetId)
