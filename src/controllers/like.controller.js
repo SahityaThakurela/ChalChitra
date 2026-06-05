@@ -171,8 +171,9 @@ const getLikedVideos = asyncHandler(async (req, res) => {
 
     const pageNum = parseInt(page) || 1
     const limitNum = parseInt(limit) || 10
-
     const skip = (pageNum - 1)*limitNum
+
+
 
     const likedVideos = await Like
     .find({ 
@@ -182,11 +183,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     .populate("video", "title description thumbnail duration owner")    // sending related data 
     .sort({ createdAt: -1 })    // latest first
     .skip(skip)
-    .limit(limit)
-
-    if(likedVideos.length === 0){
-        throw new ApiError(400, "something went wrong in fetching the liked video data")
-    }
+    .limit(limitNum)
 
     return res
     .status(200)
@@ -195,6 +192,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
             200,
             {
                 userId,
+                currentPage: pageNum, // send this in res while pagination
                 totalLikedVideos: likedVideos.length,
                 likedVideos
             },
