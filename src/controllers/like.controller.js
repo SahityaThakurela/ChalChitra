@@ -3,6 +3,7 @@ import { Like } from "../models/like.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
+import { Tweet } from "../models/tweet.model.js"
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
     const { videoId } = req.params
@@ -58,21 +59,21 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     //TODO: toggle like on comment
 
     if (!commentId) {
-        throw new ApiError(400, "please enter a video id")
+        throw new ApiError(400, "please enter a comment id")
     }
 
     if (!isValidObjectId(commentId)) {
-        throw new ApiError(400, "please enter a valid video id")
+        throw new ApiError(400, "please enter a valid comment id")
     }
 
-    //cheaking if user already liked or not
+    // cheaking if user already liked or not
     const comment = await Comment.findOne({
         comment: commentId,
         likeBy: req.user?._id
     })
 
     if (comment) {
-        await Comment.deleteOne({ _id: Like._id })     // delete specific comment
+        await Comment.deleteOne({ _id: Comment._id })     // delete specific comment
 
         return res
         .status(200)
@@ -105,6 +106,49 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 const toggleTweetLike = asyncHandler(async (req, res) => {
     const { tweetId } = req.params
     //TODO: toggle like on tweet
+
+    if (!tweetId) {
+        throw new ApiError(400, "please enter a tweet id")
+    }
+
+    if (!isValidObjectId(tweetId)) {
+        throw new ApiError(400, "please enter a valid tweet id")
+    }
+
+    //cheaking if user already liked or not
+    const tweet = await Tweet.findOne({
+        tweet: tweetId,
+        likeBy: req.user?._id
+    })
+
+    if (tweet) {
+        await Tweet.deleteOne({ _id: Tweet._id })     // delete specific comment
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {isTweetLiked: false},
+                "Tweet unliked successfully"
+            )
+        )
+    } else {
+        await Tweet.create({
+            tweet: tweetId,
+            likeBy: req.user?._id
+        })
+
+        return res
+        .status(201)
+        .json(
+            new ApiResponse(
+                201,
+                {isTweetLiked: true},
+                "tweet liked successfully"
+            )
+        )
+    }
 }
 )
 
