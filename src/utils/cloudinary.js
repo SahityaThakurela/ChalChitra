@@ -18,7 +18,7 @@ const uploadOnCloudinary = async function (fileUploadPath) {
         fs.unlinkSync(fileUploadPath)   //remove the file from the server
         return response;
     } catch (error) {
-        console.error("cloudinary upload error : ", error)
+        //console.error("cloudinary upload error : ", error)
         fs.unlinkSync(fileUploadPath) //Delete the file from local/server after upload is failed
         
         return null;
