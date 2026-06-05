@@ -154,6 +154,46 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 
 const getLikedVideos = asyncHandler(async (req, res) => {
     //TODO: get all liked videos
+    const { userId } = req.params
+
+    if (!userId) {
+        throw new ApiError(400, "User ID is required")
+    }
+
+    if (!isValidObjectId(userId)) {
+        throw new ApiError(400, "Invalid user ID format")
+    }
+
+    if(req.user._id.toString() !== userId.toString()){
+        throw new ApiError("you are not autharized to see this user watched history")
+    }
+    const likedVideos = await Like
+    .find({ 
+        _id: req.user._id,
+        video: { $exists: true }        // only liked videos not the comments and tweets
+    })
+    .populate("video", "title description thumbnail duration owner")    // sending related data 
+    .sort({ createdAt: -1 })    // latest first
+
+    if(likedVideos.length === 0){
+        throw new ApiError(400, "something went wrong in fetching the liked video data")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                userId,
+                totalLikedVideos: likedVideos.length,
+                likedVideos
+            },
+            // "fetched all the liked videos data by user"
+            likedVideos === 0? "No liked videos found": "liked videos fetched successfully"
+        )
+    )
+
 })
 
 export {
