@@ -155,6 +155,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 const getLikedVideos = asyncHandler(async (req, res) => {
     //TODO: get all liked videos
     const { userId } = req.params
+    const { page = 1, limit = 10 } = req.query    // take this in query not in body
 
     if (!userId) {
         throw new ApiError(400, "User ID is required")
@@ -167,6 +168,12 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     if(req.user._id.toString() !== userId.toString()){
         throw new ApiError("you are not autharized to see this user watched history")
     }
+
+    const pageNum = parseInt(page) || 1
+    const limitNum = parseInt(limit) || 10
+
+    const skip = (pageNum - 1)*limitNum
+
     const likedVideos = await Like
     .find({ 
         _id: req.user._id,
@@ -174,6 +181,8 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     })
     .populate("video", "title description thumbnail duration owner")    // sending related data 
     .sort({ createdAt: -1 })    // latest first
+    .skip(skip)
+    .limit(limit)
 
     if(likedVideos.length === 0){
         throw new ApiError(400, "something went wrong in fetching the liked video data")
