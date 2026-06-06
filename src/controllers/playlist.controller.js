@@ -22,7 +22,25 @@ import { useId } from "react"
 const createPlaylist = asyncHandler(async (req, res) => {
     const {name, description} = req.body
     //TODO: create playlist
+    if(name.trim() === "" && description.trim() === ""){
+        throw new ApiError(400, "please enter title and description to the playlist")
+    }
 
+    const playlist = await Playlist.create({
+        name,
+        description,
+        owner: req.user._id
+    })
+
+    return res
+    .status(201)
+    .json(
+        new ApiResponse(
+            201,
+            playlist,
+            "playlist created successfully"
+        )
+    )
 
 })
 
@@ -30,7 +48,22 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     const {userId} = req.params
     //TODO: get user playlists
 
+    if(!userId){
+        throw new ApiError(400,"please enter a user Id")
+    }
+
+    // anyone has the userid can access the list of the playlist he/she has created
+    const playlist = await Playlist.find({ owner: userId })
     
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            playlist,
+            "successfully fetched all the playlist created by the user"
+        )
+    )
 })
 
 const getPlaylistById = asyncHandler(async (req, res) => {
