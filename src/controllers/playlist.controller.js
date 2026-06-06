@@ -22,7 +22,7 @@ import { useId } from "react"
 const createPlaylist = asyncHandler(async (req, res) => {
     const {name, description} = req.body
     //TODO: create playlist
-    if(name.trim() === "" && description.trim() === ""){
+    if(!name || !description || name.trim() === "" || description.trim() === ""){
         throw new ApiError(400, "please enter title and description to the playlist")
     }
 
@@ -230,6 +230,70 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     const {playlistId} = req.params
     const {name, description} = req.body
     //TODO: update playlist
+
+    if(!playlistId){
+        throw new ApiError(400,"please enter a playlistId")
+    }
+    
+    if (!isValidObjectId(playlistId)){
+        throw new ApiError(400, "please enter a valid playlist Id")
+    }
+
+    if(name.trim() === "" && description.trim() === ""){
+        throw new ApiError(400, "please edit name or description")
+    }
+
+    const playlistCh = await Playlist.findById(playlistId)
+
+    if (playlistCh.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You are not authorized to update this playlist")
+}
+    
+    if(!playlistCh){
+        throw new ApiError(404, "palylist not found")
+    }
+
+    const updatedFields = {}
+    // if(name.trim() !== "" && description.trim() !== ""){
+    //     updatedFields.name = name
+    //     updatedFields.description = description
+    // }else if(name.trim() !== "" || description.trim() !== ""){
+    //     if(sdf){
+
+    //     }
+    // }
+
+
+    
+    if(name.trim() !== ""){
+        updatedFields.name = name.trim()
+    }
+    if(description.trim()!== ""){
+        updatedFields.description = description.trim()
+    }
+    
+    const playlist = await Playlist.findByIdAndUpdate(
+        {_id: playlistId},
+        {$set: updatedFields},
+        {new: true}
+    )
+
+    if(!playlist){
+        throw new ApiError(404, "something went wrong no updated playlist found")
+    }
+    
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200, 
+            {
+                playlistId,
+                playlist
+            },
+            "Playlist fields updated successfully"
+        )
+    )
 
 })
 
