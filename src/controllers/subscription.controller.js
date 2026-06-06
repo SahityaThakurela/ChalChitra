@@ -70,13 +70,69 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 })
 
 // controller to return subscriber list of a channel
+// 
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const {channelId} = req.params
+
+    if(!channelId){
+        throw new ApiError(400, "please enter channel id")
+    }
+
+    if(!isValidObjectId(channelId)){
+        throw new ApiError(400, "enter a valid channel id")
+    }
+
+    // const channel = await Subscription.findOne({ channel: channelId })
+
+    // if(!channel){
+    //     throw new ApiError(404, "channel not found")
+    // }
+
+    const listOfChannelSubs = await Subscription.find({ channel: channelId })
+
+    if(!listOfChannelSubs){
+        throw new ApiError(404, "unable to find list of channel's subscribers")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            listOfChannelSubs,
+            "list of channel subscribers fetched successfully"
+        )
+    )
 })
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
     const { subscriberId } = req.params
+
+    if(!subscriberId){
+        throw new ApiError(400, "please enter subscriber id")
+    }
+
+    if(!isValidObjectId(subscriberId)){
+        throw new ApiError(400, "enter a valid subscriber id")
+    }
+
+
+    const subscriber = await Subscription.find({ subscriber: subscriberId })
+
+    if(!subscriber){
+        throw new ApiError(404, "unable to find list of subscribers of user")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            subscriber,
+            "list of subscribers of user fetched successfully"
+        )
+    )
 })
 
 export {
