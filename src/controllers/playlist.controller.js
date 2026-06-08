@@ -53,15 +53,16 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
         throw new ApiError(400, "please enter a user Id")
     }
     // Fix
-    if (!isValidObjectId(useId)) {
+    if (!isValidObjectId(userId)) {
         throw new ApiError(400, "enter a valid user id")
+    }
+    
+    if (req.user?._id.toString() !==  userId) {
+        throw new ApiError(402, "you are not autharized to get the playlsit")
     }
 
     const playlist = await Playlist.find({ owner: userId })
 
-    if (req.user?._id.toString() !== playlist.owner.toString()) {
-        throw new ApiError(402, "you are not autharized to get the playlsit")
-    }
 
     return res
         .status(200)
@@ -207,15 +208,16 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 
     /// fix
     // cheack if video is present for not 
-    if(!playlist.videos.includes(videoId)){
-        throw new ApiError(400, "video is not in the playlist")
-    }
-
+    
     const playlist = await Playlist.findByIdAndUpdate(
         { _id: playlistId },
         { $pull: { videos: videoId } },
         { new: true }
     )
+
+    if(!playlist){
+        throw new ApiError(400, "video is not in the playlist")
+    }
 
     // fix
     if (playlist.owner.toString() !== req.user._id.toString()) {
