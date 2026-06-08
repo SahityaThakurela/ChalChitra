@@ -17,14 +17,28 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         throw new ApiError(400, "please enter a valid video id")
     }
 
+
+    // //auth 
+    // if(req.user?._id.toString() !== Like.likeBy.toString()){
+    //     throw new ApiError(403, "not authorized to like or unlike")
+    // }
+
+
     //cheaking if user already liked or not
     const like = await Like.findOne({
-        video: videoId,
+        // video: videoId,
+        video: { $exists: true, $ne: null}, // exits and should not be null
         likeBy: req.user?._id
     })
 
     if (like) {
-        await Like.deleteOne({ _id: Like._id })     // delete specific like
+        // const unLike = await Like.deleteOne({ likeBy: req.user._id })     // not a good way to do cuz no specific video is deleting 
+
+        const unLike = await Like.findByIdAndDelete(like._id)   // great way
+
+        if(!unLike){
+            throw new ApiError(400, "unLike doesn't work")
+        }
 
         return res
         .status(200)
@@ -36,10 +50,14 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
             )
         )
     } else {
-        await Like.create({
+        const like = await Like.create({
             video: videoId,
             likeBy: req.user?._id
         })
+
+        if(!like){
+            throw new ApiError(400, "Like doesn't work")
+        }
 
         return res
         .status(201)
@@ -154,20 +172,20 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 
 const getLikedVideos = asyncHandler(async (req, res) => {
     //TODO: get all liked videos
-    const { userId } = req.params
+    // const { userId } = req.params
     const { page = 1, limit = 10 } = req.query    // take this in query not in body
 
-    if (!userId) {
-        throw new ApiError(400, "User ID is required")
-    }
+    // if (!userId) {
+    //     throw new ApiError(400, "User ID is required")
+    // }
 
-    if (!isValidObjectId(userId)) {
-        throw new ApiError(400, "Invalid user ID format")
-    }
+    // if (!isValidObjectId(userId)) {
+    //     throw new ApiError(400, "Invalid user ID format")
+    // }
 
-    if(req.user._id.toString() !== userId.toString()){
-        throw new ApiError("you are not autharized to see this user watched history")
-    }
+    // if(req.user._id.toString() !== Like.likeBy.toString()){
+    //     throw new ApiError("you are not autharized to see this user watched history")
+    // }
 
     const pageNum = parseInt(page) || 1
     const limitNum = parseInt(limit) || 10
@@ -177,7 +195,8 @@ const getLikedVideos = asyncHandler(async (req, res) => {
 
     const likedVideos = await Like
     .find({ 
-        _id: req.user._id,
+        // _id: req.user._id,           // fix
+        likeBy: req.user._id,
         video: { $exists: true }        // only liked videos not the comments and tweets
     })
     .populate("video", "title description thumbnail duration owner")    // sending related data 
@@ -191,7 +210,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
         new ApiResponse(
             200,
             {
-                userId,
+                // userId,
                 currentPage: pageNum, // send this in res while pagination
                 totalLikedVideos: likedVideos.length,
                 likedVideos
