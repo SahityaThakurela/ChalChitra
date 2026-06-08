@@ -104,11 +104,11 @@ const updateComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params
 
     if(!commentId) {
-        throw new ApiError(404, "video id not found")
+        throw new ApiError(404, "comment id not found")
     }
 
     if(!isValidObjectId(commentId)){
-        throw new ApiError(400, "Not a valid video id")
+        throw new ApiError(400, "Not a valid comment id")
     }
 
     if(!newContent || newContent.trim() === ""){
@@ -157,11 +157,12 @@ const deleteComment = asyncHandler(async (req, res) => {
 
     const comment = await Comment.findById(commentId)
 
-    if(!comment){
+    if(!req.user._id){
         throw new ApiError(404, "comment info not fetched")
     }
+    console.log(req.user._id)
 
-    if(comment.owner.toString() !== req.user?._id){
+    if(comment.owner.toString() !== req.user?._id.toString()){
         throw new ApiError(403,"unautharized access for deleting a comment")
     }
 

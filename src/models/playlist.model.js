@@ -8,7 +8,7 @@ const playlistSchema = new Schema(
             trim: true
         },
         description: {
-            type: string,
+            type: String,
             required: true
         },
         // videos contain id of videos in a array
